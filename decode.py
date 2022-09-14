@@ -5,6 +5,7 @@ import struct
 import sys
 
 input_file = ""
+output_folder = ""
 
 # Parse args
 if len(sys.argv) <= 1:
@@ -53,13 +54,19 @@ if version < 2 or version > 3:
 	print("ERROR: Unsupported file version!")
 	exit(1)
 
-# Parse list using the worst-named variables known to man
+# Parse list
 mode = "H" # current
 temp = bytearray() # temp var
 end_len = 0 # temp len var
 bin_len = 0 # temp var (how long binary section is)
 count = 0 # temp var (counting var)
 file_name = ""
+
+def next_generic_name():
+	i = 1
+	while "output" + str(i) + ".txt" in raw_files:
+		i += 1
+	return "output" + str(i) + ".txt"
 
 for byte in input_binary:
 	byte = byte.to_bytes(1, byteorder="big", signed=False)
@@ -110,6 +117,13 @@ for byte in input_binary:
 		
 		# Start reading binary (start with real)
 		elif byte == b"\x73": # s
+			# Check for file name
+			if file_name == "":
+				file_name = next_generic_name()
+				print("WARNING: a file does not have a name. Defaulting to " + file_name)
+				raw_files[file_name] = list()
+			
+			# Switch modes
 			mode = "r"
 			temp = bytearray()
 			count = 0
@@ -124,8 +138,8 @@ for byte in input_binary:
 		if byte == b"\x00": # null is end of string
 			# Check if string is invalid
 			if count == 0:
-				print("WARNING: a file is missing a name. Defaulting as output.txt. File might not be txt.")
-				file_name = "output.txt"
+				file_name = next_generic_name()
+				print("WARNING: a file does not have a name. Defaulting to " + file_name)
 				mode = "M"
 				continue
 			
