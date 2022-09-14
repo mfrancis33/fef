@@ -2,22 +2,26 @@
 A sort of encoding/encryption test: Fourier-Encoded Files.
 
 ## What it is
-Uses IFFT and FFT to encode/decode files of your choice, making them extremely bloated and unreadable to anyone except you if you know that you used this.
+Uses IFFT (the inverse of the next) and [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) to encode/decode files of your choice. This isn't really useful for anything, I just thought it was cool. Also, the encoded file is a lot more massive than the original file(s)
 
 ## What the future holds
-In the future, I hope to add support for file names, multiple files, basic security, and even a way to identify if it's a FEF file. Right now, it has none of that. Also, the name FEF was created just now and isn't implemented into the program.
+Now that support for file names and multiple files has been added (and in the same day I uploaded this to GitHub!), I hope to add support for some basic security (namely "passwords" that encrypt the bytes of the data). After that, I might focus on file size optimizations, as the output files can be massive.
 
 ## How to use
-With the extremely basic and unfinished state it's in, you just need Python 3.x (I'm using 3.10.6), numpy, and a CLI.
+To use this program, you just need Python 3.x (I'm using 3.10.6), [numpy](https://numpy.org/), and a CLI.
 
-To encode a file, use `$ py encode.py your_file_here.txt output.bin` (of course, replacing `your_file_here.txt` and possibly `output.bin` with whatever file you want to encode). Boom, your file is encoded and probably several magnitudes more file space than it was originally. File size optimization was not my goal here.
+Here's an example of how to encode files: `$ py encode.py -i file_1.txt file_2.png -o output.fef`. All you need to do is run `encode.py` with python, place your files after the `-i` flag, and place your output file name after the `-o` flag. The `-i` flag and some files are required, although the `-o` and its corresponding output file are not.
 
-To decode a file, use `$ py decode.py output.bin output.txt` (and you can replace those file names too). Your output file will be whatever you put in the second argument and should be exactly the same as the file you inputted (apart from probably some metadata, but who cares about that?).
+To decode a file, use `$ py decode.py output.fef`, replacing `output.fef` with whatever you named your file. Your output files will be named the same thing as the files you encoded and ***right now the program does not check if it's overwriting files, so be careful not to lose data!!*** Not that you should lose any, unless in the time you encoded and decoded the files, you edited the original file.
 
-This program literally doesn't care what file you put into it. From my testing, it works fine with both human-readable and binary files.
+This program literally doesn't care what files you put into it. From my testing, it works fine with both human-readable and binary files.
 
 ## How does it work?
-Well that's a great question! It splits the input file into sections of bytes and then uses numpy's IFFT function to create complex numbers out of it, which are then turned into raw bytes and spat into a file with a couple of markers between sections so the program knows what it's doing. On the way back, it reads those markers and binary data back into the original file's bytes.
+If you're too lazy to look at the source code or find it to be a hideous, unreadable mess (sorry if that's the case), then this is the place to be! The program reads all the bytes in the file and turns them into signed ints. It then uses IFFT to encode them into complex numbers, which are then spat out as raw binary data into the file.
+
+On the way back, it does the opposite: turns the raw binary data into complex numbers, uses FFT to turn them roughly back into the same numbers they were before (the difference is pretty much floating point precision errors), and turns those numbers back into the bytes of the files you encoded.
+
+Names of the files are included, although they aren't encoded.
 
 ## Why did you make this?
 For fun.
