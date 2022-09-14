@@ -79,7 +79,7 @@ output = open(output_file if not output_file == "" else "output.fef", "wb")
 output.write(b"FEF\x02\x00")
 for i, sections in enumerate(complex_data):
 	# Write file flag
-	output.write(b"\x4e") # F
+	output.write(b"\x46") # F
 	
 	# Write file name
 	output.write(b"\x4e") # N
@@ -105,7 +105,7 @@ for i, sections in enumerate(complex_data):
 			output.write(bytearray(real))
 			output.write(bytearray(imag))
 
-		output.write(b"\x45") # E
+	output.write(b"\x45") # E
 output.close()
 
 print("done")
