@@ -8,11 +8,11 @@ Uses IFFT (the inverse of the next) and [FFT](https://en.wikipedia.org/wiki/Fast
 Now that support for file names and multiple files has been added (and in the same day I uploaded this to GitHub!), I hope to add support for some basic security (namely "passwords" that encrypt the bytes of the data). After that, I might focus on file size optimizations, as the output files can be massive.
 
 ## How to use
-To use this program, you just need Python 3.x (I'm using 3.10.6), [numpy](https://numpy.org/), and a CLI.
+To use this program, you just need Python 3.8+ (I'm using 3.10.6), [numpy](https://numpy.org/), and a CLI.
 
 Here's an example of how to encode files: `$ py encode.py -i file_1.txt file_2.png -o output.fef`. All you need to do is run `encode.py` with python, place your files after the `-i` flag, and place your output file name after the `-o` flag. The `-i` flag and some files are required, although the `-o` and its corresponding output file are not.
 
-To decode a file, use `$ py decode.py output.fef`, replacing `output.fef` with whatever you named your file. Your output files will be named the same thing as the files you encoded and ***right now the program does not check if it's overwriting files, so be careful not to lose data!!*** Not that you should lose any, unless in the time you encoded and decoded the files, you edited the original file.
+To decode a file, use `$ py decode.py -i output.fef`, replacing `output.fef` with whatever you named your file. Your output files will have the same name as what you originally encoded and will be located in a folder the same name as the input file. The name of the output folder can be customized with the -f option.
 
 This program literally doesn't care what files you put into it. From my testing, it works fine with both human-readable and binary files.
 
