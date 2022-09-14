@@ -1,22 +1,56 @@
 import numpy as np
 from numpy.fft import fft, ifft
+import os
 import struct
 import sys
 
-if not len(sys.argv) == 2:
-	print("Must have input file as first argument!")
+input_file = ""
+
+# Parse args
+if len(sys.argv) <= 1:
+	print("ERROR: No arguments provided!")
 	exit(1)
+
+last_flag = ""
+for arg in sys.argv:
+	# Look for flags
+	if arg == "-i" or arg == "--input":
+		last_flag = "-i"
+	else:
+	# Do stuff with flags
+		if last_flag == "-i":
+			# Check if user alreay put file
+			if input_file == "":
+				# Check if file can be accessed, warn user if not
+				if os.access(arg, os.R_OK):
+					input_file = arg
+				else:
+					print("ERROR: " + arg + " is not a file that can be accessed!")
+					exit(1)
+			else:
+				print("WARNING: Extra file provided(" + arg + ")! Ignoring")
 
 input_binary = bytearray()
 raw_files = dict()
 
 # Create binary array
 try:
-	with open(sys.argv[1], "rb") as f:
+	with open(input_file, "rb") as f:
 		while (byte := f.read(1)):
 			input_binary.append(byte[0])
 except:
-	print("File does not exist!")
+	print("ERROR: File does not exist!")
+	exit(1)
+
+# Validate file is FEF
+if not bytes(input_binary[0:3]) == b"FEF":
+	print("ERROR: Invalid FEF file!")
+	exit(1)
+
+# Parse version number
+version = input_binary[3] # int
+if version < 2 or version > 3:
+	print("ERROR: Unsupported file version!")
 	exit(1)
 
 # Parse list using the worst-named variables known to man

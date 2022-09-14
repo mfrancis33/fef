@@ -12,7 +12,7 @@ To use this program, you just need Python 3.8+ (I'm using 3.10.6), [numpy](https
 
 Here's an example of how to encode files: `$ py encode.py -i file_1.txt file_2.png -o output.fef`. All you need to do is run `encode.py` with python, place your files after the `-i` flag, and place your output file name after the `-o` flag. The `-i` flag and some files are required, although the `-o` and its corresponding output file are not.
 
-To decode a file, use `$ py decode.py -i output.fef`, replacing `output.fef` with whatever you named your file. Your output files will have the same name as what you originally encoded and will be located in a folder the same name as the input file. The name of the output folder can be customized with the -f option.
+To decode a file, use `$ py decode.py -i output.fef`, replacing `output.fef` with whatever you named your file. Your output files will have the same name as what you originally encoded and will be located in a folder the same name as the input file. The name of the output folder can be customized with the `-f` option.
 
 This program literally doesn't care what files you put into it. From my testing, it works fine with both human-readable and binary files.
 
