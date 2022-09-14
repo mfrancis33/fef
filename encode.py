@@ -78,6 +78,9 @@ output = open(output_file if not output_file == "" else "output.fef", "wb")
 # No encryption right now (encryption flag will be 0x01)
 output.write(b"FEF\x02\x00")
 for i, sections in enumerate(complex_data):
+	# Write file flag
+	output.write(b"\x4e") # F
+	
 	# Write file name
 	output.write(b"\x4e") # N
 	output.write(bytearray(input_files[i], encoding="UTF-8"))
