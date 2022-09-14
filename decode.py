@@ -61,7 +61,7 @@ if not bytes(input_binary[0:3]) == b"FEF":
 
 # Parse version number
 version = input_binary[3] # int
-if version < 2 or version > 3:
+if not version == 2:
 	print("ERROR: Unsupported file version!")
 	exit(1)
 

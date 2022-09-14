@@ -74,9 +74,9 @@ for file in input_files:
 output = open(output_file if not output_file == "" else "output.fef", "wb")
 
 # Write file header (FEF, version, and encryption flag)
-# Current version is 0x03
+# Current version is 0x02
 # No encryption right now (encryption flag will be 0x01)
-output.write(b"FEF\x03\x00")
+output.write(b"FEF\x02\x00")
 for i, sections in enumerate(complex_data):
 	# Write file flag
 	output.write(b"\x46") # F
