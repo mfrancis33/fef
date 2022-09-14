@@ -17,6 +17,8 @@ for arg in sys.argv:
 	# Look for flags
 	if arg == "-i" or arg == "--input":
 		last_flag = "-i"
+	elif arg == "-f" or arg == "--folder":
+		last_flag = "-f"
 	else:
 	# Do stuff with flags
 		if last_flag == "-i":
@@ -30,6 +32,12 @@ for arg in sys.argv:
 					exit(1)
 			else:
 				print("WARNING: Extra file provided(" + arg + ")! Ignoring")
+		elif last_flag == "-f":
+			# Check if user alreay put file
+			if output_folder == "":
+				output_folder = arg
+			else:
+				print("WARNING: Extra folder provided(" + arg + ")! Ignoring")
 
 input_binary = bytearray()
 raw_files = dict()
@@ -37,6 +45,9 @@ raw_files = dict()
 # Create binary array
 try:
 	with open(input_file, "rb") as f:
+		if output_folder == "":
+			output_folder = os.path.join(".", f.name[:f.name.rfind(".")])
+		
 		while (byte := f.read(1)):
 			input_binary.append(byte[0])
 except:
@@ -197,6 +208,13 @@ for byte in input_binary:
 		print("Invalid mode: ", mode)
 		break
 
+# Output folder checking
+if not (start := output_folder[0]) == "." and not start == "/" and not start == "\\" and not ":/" in output_folder and not ":\\" in output_folder:
+	start = os.path.join(".", output_folder)
+if not os.path.isdir(output_folder):
+	os.makedirs(output_folder)
+
+# Convert to files
 for name, raw in raw_files.items():
 	# Convert list to complex numbers
 	complex_list = list()
@@ -212,7 +230,7 @@ for name, raw in raw_files.items():
 	for ls in complex_list:
 		fft_reals.append(fft(ls).real)
 
-	file = open(name, "wb")
+	file = open(os.path.join(output_folder, name), "wb")
 
 	for i in fft_reals:
 		for j in i:
