@@ -1,31 +1,83 @@
 import numpy as np
 from numpy.fft import fft, ifft
+import os
 import struct
 import sys
 
-if not len(sys.argv) == 2:
-	print("Must have input file as first argument!")
+input_file = ""
+output_folder = ""
+
+# Parse args
+if len(sys.argv) <= 1:
+	print("ERROR: No arguments provided!")
 	exit(1)
+
+last_flag = ""
+for arg in sys.argv:
+	# Look for flags
+	if arg == "-i" or arg == "--input":
+		last_flag = "-i"
+	elif arg == "-f" or arg == "--folder":
+		last_flag = "-f"
+	else:
+	# Do stuff with flags
+		if last_flag == "-i":
+			# Check if user alreay put file
+			if input_file == "":
+				# Check if file can be accessed, warn user if not
+				if os.access(arg, os.R_OK):
+					input_file = arg
+				else:
+					print("ERROR: " + arg + " is not a file that can be accessed!")
+					exit(1)
+			else:
+				print("WARNING: Extra file provided(" + arg + ")! Ignoring")
+		elif last_flag == "-f":
+			# Check if user alreay put file
+			if output_folder == "":
+				output_folder = arg
+			else:
+				print("WARNING: Extra folder provided(" + arg + ")! Ignoring")
 
 input_binary = bytearray()
 raw_files = dict()
 
 # Create binary array
 try:
-	with open(sys.argv[1], "rb") as f:
+	with open(input_file, "rb") as f:
+		if output_folder == "":
+			output_folder = os.path.join(".", f.name[:f.name.rfind(".")])
+		
 		while (byte := f.read(1)):
 			input_binary.append(byte[0])
 except:
-	print("File does not exist!")
+	print("ERROR: File does not exist!")
 	exit(1)
 
-# Parse list using the worst-named variables known to man
+# Validate file is FEF
+if not bytes(input_binary[0:3]) == b"FEF":
+	print("ERROR: Invalid FEF file!")
+	exit(1)
+
+# Parse version number
+version = input_binary[3] # int
+if not version == 2:
+	print("ERROR: Unsupported file version!")
+	exit(1)
+
+# Parse list
 mode = "H" # current
 temp = bytearray() # temp var
 end_len = 0 # temp len var
 bin_len = 0 # temp var (how long binary section is)
 count = 0 # temp var (counting var)
 file_name = ""
+
+def next_generic_name():
+	i = 1
+	while "output" + str(i) + ".txt" in raw_files:
+		i += 1
+	return "output" + str(i) + ".txt"
 
 for byte in input_binary:
 	byte = byte.to_bytes(1, byteorder="big", signed=False)
@@ -76,6 +128,13 @@ for byte in input_binary:
 		
 		# Start reading binary (start with real)
 		elif byte == b"\x73": # s
+			# Check for file name
+			if file_name == "":
+				file_name = next_generic_name()
+				print("WARNING: a file does not have a name. Defaulting to " + file_name)
+				raw_files[file_name] = list()
+			
+			# Switch modes
 			mode = "r"
 			temp = bytearray()
 			count = 0
@@ -90,8 +149,8 @@ for byte in input_binary:
 		if byte == b"\x00": # null is end of string
 			# Check if string is invalid
 			if count == 0:
-				print("WARNING: a file is missing a name. Defaulting as output.txt. File might not be txt.")
-				file_name = "output.txt"
+				file_name = next_generic_name()
+				print("WARNING: a file does not have a name. Defaulting to " + file_name)
 				mode = "M"
 				continue
 			
@@ -149,6 +208,13 @@ for byte in input_binary:
 		print("Invalid mode: ", mode)
 		break
 
+# Output folder checking
+if not (start := output_folder[0]) == "." and not start == "/" and not start == "\\" and not ":/" in output_folder and not ":\\" in output_folder:
+	start = os.path.join(".", output_folder)
+if not os.path.isdir(output_folder):
+	os.makedirs(output_folder)
+
+# Convert to files
 for name, raw in raw_files.items():
 	# Convert list to complex numbers
 	complex_list = list()
@@ -164,7 +230,7 @@ for name, raw in raw_files.items():
 	for ls in complex_list:
 		fft_reals.append(fft(ls).real)
 
-	file = open(name, "wb")
+	file = open(os.path.join(output_folder, name), "wb")
 
 	for i in fft_reals:
 		for j in i:
