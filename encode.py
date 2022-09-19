@@ -5,7 +5,8 @@ import sys
 
 input_files = list()
 output_file = ""
-size = 64
+size = 64 # this may need to be able to change
+password = ""
 
 # Parse args
 if len(sys.argv) <= 1:
@@ -19,20 +20,28 @@ for arg in sys.argv:
 		last_flag = "-i"
 	elif arg == "-o" or arg == "--output":
 		last_flag = "-o"
+	elif arg == "-p" or arg == "--password":
+		last_flag = "-p"
 	else:
 	# Do stuff with flags
+		# Input file(s)
 		if last_flag == "-i":
 			# Check if file can be accessed, warn user if not
 			if os.access(arg, os.R_OK):
 				input_files.append(arg)
 			else:
 				print("WARNING: " + arg + " is not a file that can be accessed! Ignoring")
+		# Output file
 		elif last_flag == "-o":
 			# Check to make sure we don't already have an output file
 			if output_file == "":
 				output_file = arg
 			else:
 				print("WARNING: extra output file provided (" + arg + ")! Ignoring")
+		# Password information
+		elif last_flag == "-p":
+			# Create/add password (password can be multiple words/have spaces)
+			password += arg
 
 if len(input_files) == 0:
 	print("ERROR: no input files provided!")
@@ -43,6 +52,8 @@ if output_file == "":
 # This list will contain the complex data of every file in order
 complex_data = list()
 
+# Encode files
+print("Parsing files")
 for file in input_files:
 	byte_sections = list()
 	
@@ -73,10 +84,12 @@ for file in input_files:
 # Convert to file
 output = open(output_file if not output_file == "" else "output.fef", "wb")
 
+print("Writing file")
+
 # Write file header (FEF, version, and encryption flag)
-# Current version is 0x02
+# Current version is 0x03
 # No encryption right now (encryption flag will be 0x01)
-output.write(b"FEF\x02\x00")
+output.write(b"FEF\x03" + (b"\x00" if password == "" else b"\x01"))
 for i, sections in enumerate(complex_data):
 	# Write file flag
 	output.write(b"\x46") # F
@@ -108,4 +121,30 @@ for i, sections in enumerate(complex_data):
 	output.write(b"\x45") # E
 output.close()
 
-print("done")
+# Encryption (uses basic XOR encryption with password of unknown length)
+if not password == "":
+	# NOTE: Needs different encryption than XOR, password is shown in null sections of file (which there are a significant amount of).
+	print("Encrypting file")
+	print("WARNING: encryption feature is currently insecure and should not be used! (also, decode.py isn't programmed to reverse it yet)")
+	# Reopen file and dump binary content into bytearray
+	file_bytes = bytearray()
+	with open(output_file if not output_file == "" else "output.fef", "rb") as f:
+		while (byte := f.read(1)):
+			file_bytes.append(byte[0])
+	
+	password_bytes = bytearray(password, encoding="UTF-8")
+	
+	# Encrypt the bytes using password XOR
+	j = 0
+	# First 5 bytes do not get encrypted because file header
+	for i in range(5, len(file_bytes)):
+		file_bytes[i] ^= password_bytes[j]
+		j += 1
+		j %= len(password_bytes)
+	
+	# Write encrypted output
+	output = open(output_file if not output_file == "" else "output.fef", "wb")
+	output.write(file_bytes)
+	output.close()
+
+print("Done")
