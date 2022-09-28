@@ -3,6 +3,8 @@ import os
 import struct
 import sys
 
+import serpent
+
 input_files = list()
 output_file = ""
 size = 64 # this may need to be able to change
@@ -88,7 +90,6 @@ print("Writing file")
 
 # Write file header (FEF, version, and encryption flag)
 # Current version is 0x03
-# No encryption right now (encryption flag will be 0x01)
 output.write(b"FEF\x03" + (b"\x00" if password == "" else b"\x01"))
 for i, sections in enumerate(complex_data):
 	# Write file flag
@@ -121,30 +122,37 @@ for i, sections in enumerate(complex_data):
 	output.write(b"\x45") # E
 output.close()
 
-# Encryption (uses basic XOR encryption with password of unknown length)
+# Encryption
 if not password == "":
-	# NOTE: Needs different encryption than XOR, password is shown in null sections of file (which there are a significant amount of).
 	print("Encrypting file")
-	print("WARNING: encryption feature is currently insecure and should not be used! (also, decode.py isn't programmed to reverse it yet)")
 	# Reopen file and dump binary content into bytearray
 	file_bytes = bytearray()
 	with open(output_file if not output_file == "" else "output.fef", "rb") as f:
 		while (byte := f.read(1)):
 			file_bytes.append(byte[0])
 	
-	password_bytes = bytearray(password, encoding="UTF-8")
+	# Encrypt 16 bytes (128 bits) at a time with 32 bytes (256 bits) of repeated key at a time
+	key_o = 0 # key offset
+	out_bytes = file_bytes[0:5]
+	for i in range(5, len(file_bytes), 16):
+		print(str(round(i / len(file_bytes) * 100, 2)) + "% ", end="\r")
+		# Get section to encode
+		to_encode = file_bytes[i : min(i+16, len(file_bytes))]
+		
+		# Figure out key
+		key = ""
+		for j in range(32):
+			key += password[(key_o + j) % len(password)]
+		key_o = (key_o + (32 % len(password))) % len(password)
+		
+		# Encryption woo
+		out_bytes += serpent.encrypt(to_encode, key_o)
 	
-	# Encrypt the bytes using password XOR
-	j = 0
-	# First 5 bytes do not get encrypted because file header
-	for i in range(5, len(file_bytes)):
-		file_bytes[i] ^= password_bytes[j]
-		j += 1
-		j %= len(password_bytes)
+	print("100.0%") # erase uneven percent (since it doesn't end on 100)
 	
 	# Write encrypted output
 	output = open(output_file if not output_file == "" else "output.fef", "wb")
-	output.write(file_bytes)
+	output.write(out_bytes)
 	output.close()
 
 print("Done")
