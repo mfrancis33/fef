@@ -17,6 +17,8 @@ if len(sys.argv) <= 1:
 
 last_flag = ""
 for arg in sys.argv:
+	if arg == "encode.py":
+		continue
 	# Look for flags
 	if arg == "-i" or arg == "--input":
 		last_flag = "-i"
@@ -24,8 +26,8 @@ for arg in sys.argv:
 		last_flag = "-o"
 	elif arg == "-p" or arg == "--password":
 		last_flag = "-p"
-	else:
 	# Do stuff with flags
+	else:
 		# Input file(s)
 		if last_flag == "-i":
 			# Check if file can be accessed, warn user if not
@@ -38,12 +40,15 @@ for arg in sys.argv:
 			# Check to make sure we don't already have an output file
 			if output_file == "":
 				output_file = arg
+				last_flag = ""
 			else:
 				print("WARNING: extra output file provided (" + arg + ")! Ignoring")
 		# Password information
 		elif last_flag == "-p":
-			# Create/add password (password can be multiple words/have spaces)
-			password += arg
+			# Create/add to password (password can be multiple words/have spaces)
+			password += ("" if password == "" else " ") + arg
+		else:
+			print("WARNING: Unknown argument provided (" + arg + ")! Ignoring")
 
 if len(input_files) == 0:
 	print("ERROR: no input files provided!")
@@ -137,7 +142,7 @@ if not password == "":
 	for i in range(5, len(file_bytes), 16):
 		print(str(round(i / len(file_bytes) * 100, 2)) + "% ", end="\r")
 		# Get section to encode
-		to_encode = file_bytes[i : min(i+16, len(file_bytes))]
+		to_encrypt = file_bytes[i : min(i+16, len(file_bytes))]
 		
 		# Figure out key
 		key = ""
@@ -146,7 +151,7 @@ if not password == "":
 		key_o = (key_o + (32 % len(password))) % len(password)
 		
 		# Encryption woo
-		out_bytes += serpent.encrypt(to_encode, key_o)
+		out_bytes += serpent.encrypt(to_encrypt, key_o)
 	
 	print("100.0%") # erase uneven percent (since it doesn't end on 100)
 	

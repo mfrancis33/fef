@@ -26,7 +26,7 @@ ROUNDS = 32 # rounds
 # value v (say, 14) in position p (say, 0) means that if the input to that
 # S-box is the pattern p (0, or 0x0) then the output will be the pattern v
 # (14, or 0xe).
-SBoxDecimalTable = [
+s_box_decimal_table = [
 	[ 3, 8,15, 1,10, 6, 5,11,14,13, 4, 2, 7, 0, 9,12 ], # S0
 	[15,12, 2, 7, 9, 0, 5,10, 1,11,14, 8, 6,13, 3, 4 ], # S1
 	[ 8, 6, 7, 9, 3,12,10,15,13, 1,14, 4, 0,11, 5, 2 ], # S2
@@ -48,15 +48,15 @@ SBoxDecimalTable = [
 # dictionaries, one per S-box, where each dictionary gets the output of the
 # S-box as the key and gives you the input, with both values being 4-bit
 # bitstrings.
-SBoxBitstring = []
-SBoxBitstringInverse = []
+s_box_bitstring = []
+s_box_bitstring_inverse = []
 
 
 # The Initial and Final permutations are each represented by one list
 # containing the integers in 0..127 without repetitions.  Having value v
 # (say, 32) at position p (say, 1) means that the output bit at position p
 # (1) comes from the input bit at position v (32).
-IPTable = [
+ip_table = [
 	0, 32, 64, 96, 1, 33, 65, 97, 2, 34, 66, 98, 3, 35, 67, 99,
 	4, 36, 68, 100, 5, 37, 69, 101, 6, 38, 70, 102, 7, 39, 71, 103,
 	8, 40, 72, 104, 9, 41, 73, 105, 10, 42, 74, 106, 11, 43, 75, 107,
@@ -66,7 +66,7 @@ IPTable = [
 	24, 56, 88, 120, 25, 57, 89, 121, 26, 58, 90, 122, 27, 59, 91, 123,
 	28, 60, 92, 124, 29, 61, 93, 125, 30, 62, 94, 126, 31, 63, 95, 127,
 ]
-FPTable = [
+fp_table = [
 	0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60,
 	64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124,
 	1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61,
@@ -82,7 +82,7 @@ FPTable = [
 # number of integers in 0..127 specifying the positions of the input bits
 # that must be XORed together (say, 72, 144 and 125) to yield the output
 # bit corresponding to the position of that list (say, 1).
-LTTable = [
+lt_table = [
 	[16, 52, 56, 70, 83, 94, 105],
 	[72, 114, 125],
 	[2, 9, 15, 30, 76, 84, 126],
@@ -214,7 +214,7 @@ LTTable = [
 ]
 
 # The following table is necessary for the non-bitslice decryption.
-LTTableInverse = [
+lt_table_inverse = [
 	[53, 55, 72],
 	[1, 5, 20, 90],
 	[15, 102],
@@ -354,21 +354,43 @@ def encrypt(plain_text, user_key):
 	user_key = str_bitstring(user_key, 256)
 	
 	# Get subkeys from user key
-	K, KHat = make_subkeys(user_key)
+	k_hat = make_subkeys(user_key)
 	
 	# Encrypt input
-	BHat = IP(plain_text)
+	b_hat = ip(plain_text)
 	for i in range(ROUNDS):
-		BHat = apply_round(i, BHat, KHat)
+		b_hat = apply_round(i, b_hat, k_hat)
 	
 	# Apply final permutation to encrypted
-	C = FP(BHat)
+	cipher_text = fp(b_hat)
 	
 	# Convert encrypted bitstring into actual bytes
-	bc = bytearray()
-	for i in range(0, len(C), 8):
-		bc.append(int(C[i:i+8], 2))
-	return bc
+	# cipher_bytes = bytearray()
+	# for i in range(0, len(cipher_text), 8):
+	# 	cipher_bytes.append(int(cipher_text[i:i+8], 2))
+	# return cipher_bytes
+	return reverse_str_bitstring(cipher_text)
+
+# Takes a 128-bit encrypted text and 256-bit user key, returns 128-bit decoded string
+def decrypt(cipher_text, user_key):
+	# Convert inputs to bitstrings
+	cipher_text = str_bitstring(cipher_text, 128)
+	user_key = str_bitstring(user_key, 256)
+
+	k_hat = make_subkeys(user_key)
+
+	b_hat = fp_inverse(cipher_text) # b_hat_r at this stage
+	for i in range(ROUNDS-1, -1, -1): # from rounds-1 down to 0 included
+		b_hat = round_inverse(i, b_hat, k_hat) # Produce b_hat_i from b_hat_i+1
+	# b_hat is now _0
+	plain_text = ip_inverse(b_hat)
+
+	# Convert plain text bitstring to bytes
+	# return_bytes = bytearray()
+	# for i in range(0, len(plain_text), 8):
+	# 	return_bytes.append(int(plain_text[i:i+8], 2))
+	# return return_bytes
+	return reverse_str_bitstring(plain_text)
 
 # =====================================================================================================================
 
@@ -381,7 +403,7 @@ def make_subkeys(user_key):
 		w[i] = user_key[(i+8)*32:(i+9)*32]
 	# Expand to prekeys 0..131
 	for i in range(132):
-		w[i] = rotate_left(xor_str(w[i-8], w[i-5], w[i-3], w[i-1], bitstring(PHI, 32), bitstring(i, 32)), 11)
+		w[i] = rotate_left(xor(w[i-8], w[i-5], w[i-3], w[i-1], bitstring(PHI, 32), bitstring(i, 32)), 11)
 	
 	# Calculate round keys
 	k = {}
@@ -407,19 +429,19 @@ def make_subkeys(user_key):
 		K.append(k[4*i] + k[4*i+1] + k[4*i+2] + k[4*i+3])
 	
 	# Apply initial permutation
-	KHat = []
+	k_hat = []
 	for i in range(33):
-		KHat.append(IP(K[i]))
+		k_hat.append(ip(K[i]))
 	
-	return K, KHat
+	return k_hat
 
 # =====================================================================================================================
 
 def rotate_left(arr, pos):
-	p = -(pos % len(arr))
-	return arr[p:] + arr[:p]
+	p = pos % len(arr)
+	return arr[-p:] + arr[:-p]
 
-def xor_str(*args):
+def xor(*args):
 	# Binary XOR on string of "0"s and "1"s
 	result = args[0]
 	for arg in args[1:]:
@@ -453,10 +475,10 @@ def bitstring(n, l):
 	return result
 
 def str_bitstring(s, l):
-	# Convert str to bitstring
-	b = bytearray(s.encode("utf-8"))
+	# Convert str to bitstring if it is a string (otherwise it is probably bytes, make sure it's a bytearray)
+	b = bytearray(s.encode("utf-8")) if isinstance(s, str) else bytearray(s)
 	
-	# Convert bytearray to literal bytes
+	# Convert bytearray to actual 0's and 1's
 	result = ""
 	for byte in b:
 		result += bitstring(byte, 8)
@@ -464,6 +486,23 @@ def str_bitstring(s, l):
 	# Pad with 0s to fill rest of space if necessary
 	if len(result) < l:
 		result = result + "0" * (l - len(result))
+	
+	return result
+
+def reverse_bitstring(s):
+	# Convert bitstring to num
+	ls = list(s)
+	result = 0
+	while len(ls) > 0:
+		result <<= 1
+		result |= 0 if ls.pop() == "0" else 1
+	return result
+
+def reverse_str_bitstring(s):
+	# Convert bytearray to literal bytes
+	result = bytearray()
+	for i in range(0, len(s), 8):
+		result.append(reverse_bitstring(s[i:i+8]))
 	
 	return result
 
@@ -481,90 +520,118 @@ def apply_permutation(table, inp):
 	
 	return result
 
-def IP(input):
+def ip(input):
 	# Initial permutation
-	return apply_permutation(IPTable, input)
+	return apply_permutation(ip_table, input)
 
-def FP(input):
+def fp(input):
 	# Final permutation
-	return apply_permutation(FPTable, input)
+	return apply_permutation(fp_table, input)
 
-def IPInverse(output):
+def ip_inverse(output):
 	# Reverse initial permutation
-	return FP(output)
+	return fp(output)
 
-def FPInverse(output):
+def fp_inverse(output):
 	# Reverse final permutation
-	return IP(output)
+	return ip(output)
 
-def LT(inp):
+def lt(inp):
 	# Table-based linear transformation
 	
 	# Check for invalid length
 	if len(inp) != 128:
-		raise ValueError("input to LT is not 128 bit long")
+		raise ValueError("input to lt is not 128 bit long")
 	
 	# Apply transformation
 	result = ""
-	for i in range(len(LTTable)):
+	for i in range(len(lt_table)):
 		outputBit = "0"
-		for j in LTTable[i]:
-			outputBit = xor_str(outputBit, inp[j])
+		for j in lt_table[i]:
+			outputBit = xor(outputBit, inp[j])
 		result = result + outputBit
 	return result
 
-def LTInverse(output):
+def lt_inverse(output):
+	# Inverse table-based linear transform
+	
 	# Check for invalid length
 	if len(output) != 128:
-		raise ValueError("input to inverse LT is not 128 bit long")
+		raise ValueError("input to inverse lt is not 128 bit long")
 	
 	# Apply inverse transformation
 	result = ""
-	for i in range(len(LTTableInverse)):
+	for i in range(len(lt_table_inverse)):
 		inputBit = "0"
-		for j in LTTableInverse[i]:
-			inputBit = xor_str(inputBit, output[j])
+		for j in lt_table_inverse[i]:
+			inputBit = xor(inputBit, output[j])
 		result = result + inputBit
 	return result
 
 # =====================================================================================================================
 
-def apply_round(i, BHati, KHat):
-	xored = xor_str(BHati, KHat[i])
+def apply_round(i, b_hati, k_hat):
+	xored = xor(b_hati, k_hat[i])
 	
-	SHati = SHat(i, xored)
+	s_hat_i = s_hat(i, xored)
 	
-	BHatiPlus1 = None
+	b_hat_i_plus_1 = None
 	if 0 <= i <= ROUNDS-2:
-		BHatiPlus1 = LT(SHati)
+		b_hat_i_plus_1 = lt(s_hat_i)
 	elif i == ROUNDS-1:
-		BHatiPlus1 = xor_str(SHati, KHat[ROUNDS])
+		b_hat_i_plus_1 = xor(s_hat_i, k_hat[ROUNDS])
 	else:
 		raise ValueError("round %d is out of 0..%d range" % (i, ROUNDS-1))
 	
-	return BHatiPlus1
+	return b_hat_i_plus_1
+
+def round_inverse(i, b_hat_i_plus_1, k_hat):
+	# Error checking
+	if 0 <= i <= ROUNDS-2:
+		s_hat_i = lt_inverse(b_hat_i_plus_1)
+	elif i == ROUNDS-1:
+		s_hat_i = xor(b_hat_i_plus_1, k_hat[ROUNDS])
+	else:
+		raise ValueError("round %d is out of 0..%d range" % (i, ROUNDS-1))
+	
+	# inverse s_hat
+	xored = s_hat_inverse(i, s_hat_i)
+	
+	# Xor with k_hat
+	b_hati = xor(xored, k_hat[i])
+	
+	return b_hati
 
 def s_box(box, inp):
 	# Apply S-box to string
-	return SBoxBitstring[box%8][inp]
+	return s_box_bitstring[box%8][inp]
 
-def SHat(box, inp):
+def s_box_inverse(box, output):
+	return s_box_bitstring_inverse[box%8][output]
+
+def s_hat(box, inp):
 	# Apply S-boxes to bitstrings
 	result = ""
 	for i in range(32):
 		result = result + s_box(box, inp[4*i:4*(i+1)])
 	return result
 
+def s_hat_inverse(box, output):
+	result = ""
+	for i in range(32):
+		result = result + s_box_inverse(box, output[4*i:4*(i+1)])
+	return result
+
 # =====================================================================================================================
 
-# Populate SBoxBitstring and SBoxBitstringInverse
-for line in SBoxDecimalTable:
+# Populate s_box_bitstring and s_box_bitstring_inverse
+for line in s_box_decimal_table:
 	dict = {}
-	inverseDict = {}
+	inverse_dict = {}
 	for i in range(len(line)):
 		index = bitstring(i, 4)
 		value = bitstring(line[i], 4)
 		dict[index] = value
-		inverseDict[value] = index
-	SBoxBitstring.append(dict)
-	SBoxBitstringInverse.append(inverseDict)
+		inverse_dict[value] = index
+	s_box_bitstring.append(dict)
+	s_box_bitstring_inverse.append(inverse_dict)
