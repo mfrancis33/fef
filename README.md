@@ -2,13 +2,13 @@
 A sort of encoding/encryption test: Fourier-Encoded Files.
 
 ## What it is
-Uses IFFT (the inverse of the next) and [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) to encode/decode files of your choice. This isn't really useful for anything, I just thought it was cool. Also, the encoded file is a lot more massive than the original file(s)
+Uses IFFT (the inverse of the next) and [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) to encode/decode files of your choice. This isn't really useful for anything, I just thought it was cool. Also, the encoded file is a lot more massive than the original file(s), so it's even more useless.
 
 ## What the future holds
-Now that support for file names and multiple files has been added (and in the same day I uploaded this to GitHub!), I hope to add support for some basic security (namely "passwords" that encrypt the bytes of the data). After that, I might focus on file size optimizations, as the output files can be massive.
+On the relatively small TODO list at this point is file size optimization, converting the encode/decode files into importable functions, adding a license, and potentially rewriting the encryption algorithm to be a lot faster (since it is pretty slow).
 
 ## How to use
-To use this program, you just need Python 3.8+ (I'm using 3.10.6), [numpy](https://numpy.org/), and a CLI.
+To use this program, you just need the latest version of Python 3.* (I'm using 3.10.6), [numpy](https://numpy.org/), and a CLI.
 
 Here's an example of how to encode files: `$ py encode.py -i file_1.txt file_2.png -o output.fef`. All you need to do is run `encode.py` with python, place your files after the `-i` flag, and place your output file name after the `-o` flag. The `-i` flag and some files are required, although the `-o` and its corresponding output file are not.
 
@@ -16,12 +16,14 @@ To decode a file, use `$ py decode.py -i output.fef`, replacing `output.fef` wit
 
 This program literally doesn't care what files you put into it. From my testing, it works fine with both human-readable and binary files.
 
+If you want to encrypt the output files so you can't turn them back as easily, add a -p flag followed by a password. The same password will be used to decrypt the file, so REMEMBER THE PASSWORD!!! The -p flag is also used to decrypt files.
+
 ## How does it work?
-If you're too lazy to look at the source code or find it to be a hideous, unreadable mess (sorry if that's the case), then this is the place to be! The program reads all the bytes in the file and turns them into signed ints. It then uses IFFT to encode them into complex numbers, which are then spat out as raw binary data into the file.
+If you're too lazy to look at the source code or find it to be a hideous, unreadable mess (sorry if that's the case), then this is the place to be! The program reads all the bytes in the file and turns them into signed ints. It then uses IFFT to encode them into complex numbers, which are then spat out as raw binary data into the file along with some general metadata.
 
-On the way back, it does the opposite: turns the raw binary data into complex numbers, uses FFT to turn them roughly back into the same numbers they were before (the difference is pretty much floating point precision errors), and turns those numbers back into the bytes of the files you encoded.
+On the way back, it does the opposite: turns the raw binary data into complex numbers, uses FFT to turn them roughly back into the same numbers they were before (the difference is pretty much floating point precision errors), and turns those numbers back into the bytes of the files you encoded. It also utilizes the metadata to retrieve the file names.
 
-Names of the files are included, although they aren't encoded.
+In terms of encryption, it encodes the file before encrypting it. The encryption algorithm used is the Serpent cipher, which came second to the Rijandel cipher to being AES. There is no particular reason as to why this particular cipher was chosen other than that it is symmetric.
 
 ## Why did you make this?
 For fun.
