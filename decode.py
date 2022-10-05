@@ -22,7 +22,7 @@ for arg in sys.argv:
 	# Look for flags
 	if arg == "-i" or arg == "--input":
 		last_flag = "-i"
-	elif arg == "-f" or arg == "--folder":
+	elif arg == "-f" or arg == "--folder" or arg == "-o" or arg == "--output":
 		last_flag = "-f"
 	elif arg == "-p" or arg == "--password":
 		last_flag = "-p"
@@ -82,6 +82,10 @@ version = input_binary[3] # int
 if version < 2 or version > 4:
 	print("ERROR: Unsupported file version!")
 	exit(1)
+
+# Old version number message
+if version < 4:
+	print("INFO: Old FEF version! Re-encode the file to enjoy the benefits of smaller file size.")
 
 # Check for password
 if input_binary[4] == 1:
@@ -243,9 +247,9 @@ for byte in input_binary:
 		temp.append(byte[0])
 		
 		# Enough bytes for double
-		if len(temp) > 1:
+		if len(temp) > (1 if version >= 4 else 7):
 			# Parse float
-			fl = float(struct.unpack(">e", temp)[0])
+			fl = float(struct.unpack(">e" if version >= 4 else ">d", temp)[0])
 			if mode == "r":
 				raw_files[file_name][-1].append([fl])
 				mode = "i"
