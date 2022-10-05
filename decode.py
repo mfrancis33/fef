@@ -79,7 +79,7 @@ if not bytes(input_binary[0:3]) == b"FEF":
 
 # Parse version number
 version = input_binary[3] # int
-if version < 2 or version > 3:
+if version < 2 or version > 4:
 	print("ERROR: Unsupported file version!")
 	exit(1)
 
@@ -243,9 +243,9 @@ for byte in input_binary:
 		temp.append(byte[0])
 		
 		# Enough bytes for double
-		if len(temp) > 3:
+		if len(temp) > 1:
 			# Parse float
-			fl = float(struct.unpack(">f", temp)[0])
+			fl = float(struct.unpack(">e", temp)[0])
 			if mode == "r":
 				raw_files[file_name][-1].append([fl])
 				mode = "i"

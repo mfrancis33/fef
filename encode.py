@@ -92,8 +92,8 @@ output = open(output_file if not output_file == "" else "output.fef", "wb")
 print("Writing file")
 
 # Write file header (FEF, version, and encryption flag)
-# Current version is 0x03
-output.write(b"FEF\x03" + (b"\x00" if password == "" else b"\x01"))
+# Current version is 0x04
+output.write(b"FEF\x04" + (b"\x00" if password == "" else b"\x01"))
 for i, sections in enumerate(complex_data):
 	# Write file flag
 	output.write(b"\x46") # F
@@ -117,8 +117,8 @@ for i, sections in enumerate(complex_data):
 		
 		# Write section
 		for num in arr:
-			real = struct.pack(">f", float(num.real))
-			imag = struct.pack(">f", float(num.imag))
+			real = struct.pack(">e", float(num.real))
+			imag = struct.pack(">e", float(num.imag))
 			output.write(bytearray(real))
 			output.write(bytearray(imag))
 
