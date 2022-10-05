@@ -243,9 +243,9 @@ for byte in input_binary:
 		temp.append(byte[0])
 		
 		# Enough bytes for double
-		if len(temp) > 7:
+		if len(temp) > 3:
 			# Parse float
-			fl = float(struct.unpack(">d", temp)[0])
+			fl = float(struct.unpack(">f", temp)[0])
 			if mode == "r":
 				raw_files[file_name][-1].append([fl])
 				mode = "i"

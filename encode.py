@@ -26,8 +26,8 @@ for arg in sys.argv:
 		last_flag = "-o"
 	elif arg == "-p" or arg == "--password":
 		last_flag = "-p"
-	# Do stuff with flags
 	else:
+	# Do stuff with flags
 		# Input file(s)
 		if last_flag == "-i":
 			# Check if file can be accessed, warn user if not
@@ -47,8 +47,6 @@ for arg in sys.argv:
 		elif last_flag == "-p":
 			# Create/add to password (password can be multiple words/have spaces)
 			password += ("" if password == "" else " ") + arg
-		else:
-			print("WARNING: Unknown argument provided (" + arg + ")! Ignoring")
 
 if len(input_files) == 0:
 	print("ERROR: no input files provided!")
@@ -119,8 +117,8 @@ for i, sections in enumerate(complex_data):
 		
 		# Write section
 		for num in arr:
-			real = struct.pack(">d", float(num.real))
-			imag = struct.pack(">d", float(num.imag))
+			real = struct.pack(">f", float(num.real))
+			imag = struct.pack(">f", float(num.imag))
 			output.write(bytearray(real))
 			output.write(bytearray(imag))
 
