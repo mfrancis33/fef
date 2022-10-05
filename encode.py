@@ -96,24 +96,24 @@ print("Writing file")
 output.write(b"FEF\x04" + (b"\x00" if password == "" else b"\x01"))
 for i, sections in enumerate(complex_data):
 	# Write file flag
-	output.write(b"\x46") # F
+	output.write(b"F") # File start
 	
 	# Write file name
-	output.write(b"\x4e") # N
+	output.write(b"N") # Name of file
 	output.write(bytearray(input_files[i], encoding="UTF-8"))
 	output.write(b"\x00") # null
 	
 	# Write length of all sections
-	output.write(b"\x4c") # L
+	output.write(b"L") # Length of section array (number of sections)
 	output.write(bytearray(struct.pack(">I", len(sections))))
-	output.write(b"\x53") # S
+	output.write(b"S") # Start of sections
 	
 	# Write sections
 	for arr in sections:
 		# Write length of section
-		output.write(b"\x6c") # l
+		output.write(b"l") # length of section
 		output.write(bytearray(struct.pack(">I", len(arr))))
-		output.write(b"\x73") # s
+		output.write(b"s") # start of start
 		
 		# Write section
 		for num in arr:
@@ -122,7 +122,7 @@ for i, sections in enumerate(complex_data):
 			output.write(bytearray(real))
 			output.write(bytearray(imag))
 
-	output.write(b"\x45") # E
+output.write(b"E") # End of file
 output.close()
 
 # Encryption
