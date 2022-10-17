@@ -26,8 +26,8 @@ for arg in sys.argv:
 		last_flag = "-o"
 	elif arg == "-p" or arg == "--password":
 		last_flag = "-p"
-	# Do stuff with flags
 	else:
+	# Do stuff with flags
 		# Input file(s)
 		if last_flag == "-i":
 			# Check if file can be accessed, warn user if not
@@ -47,8 +47,6 @@ for arg in sys.argv:
 		elif last_flag == "-p":
 			# Create/add to password (password can be multiple words/have spaces)
 			password += ("" if password == "" else " ") + arg
-		else:
-			print("WARNING: Unknown argument provided (" + arg + ")! Ignoring")
 
 if len(input_files) == 0:
 	print("ERROR: no input files provided!")
@@ -94,37 +92,37 @@ output = open(output_file if not output_file == "" else "output.fef", "wb")
 print("Writing file")
 
 # Write file header (FEF, version, and encryption flag)
-# Current version is 0x03
-output.write(b"FEF\x03" + (b"\x00" if password == "" else b"\x01"))
+# Current version is 0x04
+output.write(b"FEF\x04" + (b"\x00" if password == "" else b"\x01"))
 for i, sections in enumerate(complex_data):
 	# Write file flag
-	output.write(b"\x46") # F
+	output.write(b"F") # File start
 	
 	# Write file name
-	output.write(b"\x4e") # N
+	output.write(b"N") # Name of file
 	output.write(bytearray(input_files[i], encoding="UTF-8"))
 	output.write(b"\x00") # null
 	
 	# Write length of all sections
-	output.write(b"\x4c") # L
+	output.write(b"L") # Length of section array (number of sections)
 	output.write(bytearray(struct.pack(">I", len(sections))))
-	output.write(b"\x53") # S
+	output.write(b"S") # Start of sections
 	
 	# Write sections
 	for arr in sections:
 		# Write length of section
-		output.write(b"\x6c") # l
+		output.write(b"l") # length of section
 		output.write(bytearray(struct.pack(">I", len(arr))))
-		output.write(b"\x73") # s
+		output.write(b"s") # start of start
 		
 		# Write section
 		for num in arr:
-			real = struct.pack(">d", float(num.real))
-			imag = struct.pack(">d", float(num.imag))
+			real = struct.pack(">e", float(num.real))
+			imag = struct.pack(">e", float(num.imag))
 			output.write(bytearray(real))
 			output.write(bytearray(imag))
 
-	output.write(b"\x45") # E
+output.write(b"E") # End of file
 output.close()
 
 # Encryption
